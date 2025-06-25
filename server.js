@@ -4,8 +4,10 @@ const app = express();
 const morgan = require('morgan')
 app.use(express.json());
 app.use(morgan(`:remote-addr [:date] ":method :url" :status - :response-time ms`));
-require('dotenv').config();
 
+
+require('dotenv').config();
+require('./db')
 
 morgan.token('date', () => {
     const date = new Date();
