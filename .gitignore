@@ -1,0 +1,69 @@
+# ------------------------------------
+# Node.js dependencies
+# ------------------------------------
+node_modules/
+
+# ------------------------------------
+# Environment config
+# ------------------------------------
+.env
+.env.local
+.env.*.local
+
+# ------------------------------------
+# Log files
+# ------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------
+# System files
+# ------------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------------
+# IDE and editor folders
+# ------------------------------------
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ------------------------------------
+# Runtime and temp files
+# ------------------------------------
+*.pid
+*.seed
+*.pid.lock
+tmp/
+temp/
+
+# ------------------------------------
+# Coverage reports
+# ------------------------------------
+coverage/
+.nyc_output/
+
+# ------------------------------------
+# Build outputs
+# ------------------------------------
+dist/
+build/
+
+# ------------------------------------
+# MongoDB dump or backup folders (if any)
+# ------------------------------------
+dump/
+mongodb_backup/
+*.archive
+
+# ------------------------------------
+# Optional logs or debug exports
+# ------------------------------------
+*.tgz
+debug.log
