@@ -67,3 +67,6 @@ mongodb_backup/
 # ------------------------------------
 *.tgz
 debug.log
+
+
+bigQuery.sql

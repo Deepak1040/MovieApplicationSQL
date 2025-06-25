@@ -30,3 +30,5 @@ process.on('SIGTERM', () => {
     console.log('\n🛑 Closing MySQL connection (SIGTERM)...');
     connection.end(() => process.exit());
 });
+
+module.exports = connection;

@@ -1,9 +1,9 @@
 const express = require('express')
 const app = express();
-
-const morgan = require('morgan')
 app.use(express.json());
-app.use(morgan(`:remote-addr [:date] ":method :url" :status - :response-time ms`));
+const morgan = require('morgan')
+
+app.use(morgan(`:remote-addr [:date] " :method :url " :status - :response-time ms`));
 
 
 require('dotenv').config();
@@ -30,3 +30,5 @@ morgan.token('date', () => {
 app.listen(process.env.PORT, () => {
     console.log(`🚀 Server started on http://localhost:${process.env.PORT}`);
 })
+
+app.use('/api/users', require('./Routes/User.js'));
