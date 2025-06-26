@@ -1,8 +1,6 @@
-const db = require('../db.js');
-// Make sure in your main app file (e.g., app.js or server.js) you have:
+const db = require('../Config/db.js');
 
-
-exports.createUser = (body) => {
+createUser = async (body) => {
 
     const name = body.name;
     const email = body.email;
@@ -20,75 +18,52 @@ exports.createUser = (body) => {
     const values = [name, email, mobile, password];
 
     // Execute query
-    db.query(query, values, (err, results) => {
-        if (err) {
-            console.error('Error inserting user:', err);
-            return { error: 'Database error' };
-        } else {
-            return results;
-        }
-    });
-};
+    const result = await db.query(query, values);
+
+    return result[0];
+}
 
 
-exports.getUserByName = (req, res) => {
-    const name = req.params.name;
+getUserByName = async (body) => {
+    const name = body.name;
     const query = 'SELECT * FROM users WHERE name = ?';
-    db.query(query, [name], (err, results) => {
-        if (err) {
-            console.error('Error fetching user:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (results.length === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.json(results[0]);
-    });
+    const result = await db.query(query, [name]);
+    return result[0];
 }
 
-exports.getAllUsers = (req, res) => {
+getAllUsers = async () => {
     const query = 'SELECT * FROM users';
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error('Error fetching users:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        res.json(results);
-    });
+    const result = await db.query(query);
+    return result[0] || [];
 }
 
-exports.updateUser = (req, res) => {
-    const getUserByName = req.params.name;
-    const { name, email, password, mobile } = req.body;
+
+updateUser = async (body) => {
+    const getUserByName = body.name;
+    const { name, email, password, mobile } = body;
 
     if (!name || !email || !password || !mobile) {
-        return res.status(400).json({ error: 'All fields are required' });
+        return { error: 'All fields are required' };
     }
 
     const query = 'UPDATE users SET name = ?, email = ?, password = ?, mobile = ? WHERE name = ?';
-    db.query(query, [name, email, password, mobile, getUserByName], (err, results) => {
-        if (err) {
-            console.error('Error updating user:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.json({ message: 'User updated successfully' });
-    });
+    const result = await db.query(query, [name, email, password, mobile, getUserByName]);
+
+    return result[0];
 }
 
-exports.deleteUser = (req, res) => {
-    const getUserByName = req.params.name;
+deleteUser = async (body) => {
+    const getUserByName = body.name;
     const query = 'DELETE FROM users WHERE name = ?';
-    db.query(query, [getUserByName], (err, results) => {
-        if (err) {
-            console.error('Error deleting user:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.json({ message: 'User deleted successfully' });
-    });
+    const result = await db.query(query, [getUserByName]);
+    return result[0];
 }
+
+module.exports = {
+    createUser: exports.createUser,
+    getUserByName: exports.getUserByName,
+    getAllUsers: exports.getAllUsers,
+    updateUser: exports.updateUser,
+    deleteUser: exports.deleteUser
+};
+// Exporting the function to get all users

@@ -2,28 +2,42 @@ const User = require('../Models/User.js');
 
 exports.getUsers = async (req, res) => {
     try {
-        const users = await User.getAllUsers();
-        res.json(users);
+        const users = await getAllUsers();
+        console.log(users);
+        res.status(200).json({
+            success: true,
+            data: users
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
     }
 };
 
 exports.getUser = async (req, res) => {
     try {
-        const user = await User.getUserByName(req.params.name);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-        res.json(user);
+        const user = await getUserByName(req.params.name);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: user,
+            message: 'User fetched successfully'
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-exports.createUser =  (req, res) => {
+exports.createUser = async (req, res) => {
     try {
-
-        const user =  User.createUser(req.body);
-        console.log(user);
+        const user = await createUser(req.body);
         res.status(201).json({ data: user, message: 'User created successfully' });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -33,7 +47,7 @@ exports.createUser =  (req, res) => {
 exports.updateUser = async (req, res) => {
     try {
         const user = req.body;
-        await User.updateUser(req.params.id, user);
+        await updateUser(req.params.id, user);
         res.json({ message: 'User updated' });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -42,8 +56,8 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     try {
-        await User.deleteUser(req.params.id);
-        res.json({ message: 'User deleted' });
+        const result = await deleteUser(req.params.name);
+        res.json({ message: 'User deleted', data: result });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

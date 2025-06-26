@@ -7,7 +7,7 @@ app.use(morgan(`:remote-addr [:date] " :method :url " :status - :response-time m
 
 
 require('dotenv').config();
-require('./db')
+require('./Config/db.js')
 
 morgan.token('date', () => {
     const date = new Date();
