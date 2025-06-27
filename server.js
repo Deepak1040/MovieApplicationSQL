@@ -32,3 +32,4 @@ app.listen(process.env.PORT, () => {
 })
 
 app.use('/api/users', require('./Routes/User.js'));
+app.use('/api/movies', require('./Routes/Movie.js'));

@@ -10,7 +10,7 @@ createUser = async (body) => {
     console.log('Received data:', body);
     // Validate required fields
     if (!name || !email || !mobile || !password) {
-        return { error: 'All fields are required' };
+        return { error: 'All fields are required' };    
     }
 
     // SQL query
