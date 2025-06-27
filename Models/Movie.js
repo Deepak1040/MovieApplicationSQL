@@ -46,10 +46,10 @@ getMovieById = async (id) => {
 
 updateMovie = async (movie, id) => {
     const { name, length, actors, screen } = movie;
-    const id = id;
+    const movieid = id;
     try {
-        const query = `UPDATE movies SET name =?, length=?, actors=?, screen=?`;
-        const result = db.query(query, [name, length, actors, screen]);
+        const query = `UPDATE movies SET name =?, length=?, actors=?, screen=? where id=?`;
+        const result = db.query(query, [name, length, actors, screen, movieid]);
         return result;
     } catch (error) {
         return error;
@@ -60,14 +60,13 @@ updateMovie = async (movie, id) => {
 
 deleteMovie = async (id) => {
 
-    const id = id;
+    const movieid = id;
     try {
         const query = `DELETE FROM movies where id =?`;
-        const result = db.query(query, [id]);
+        const result = db.query(query, [movieid]);
         return result;
     } catch (error) {
         return error;
     }
 }
 
-module.exports = movie;
