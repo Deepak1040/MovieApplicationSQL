@@ -53,10 +53,15 @@ updateUser = async (body) => {
 }
 
 deleteUser = async (body) => {
-    const getUserByName = body.name;
-    const query = 'DELETE FROM users WHERE name = ?';
-    const result = await db.query(query, [getUserByName]);
-    return result[0];
+    try {
+        const getUserByName = body.name;
+        const query = 'DELETE FROM users WHERE name = ?';
+        const result = await db.query(query, [getUserByName]);
+        return result;
+    } catch (error) {
+        return error;
+    }
+
 }
 
 module.exports = {

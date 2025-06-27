@@ -3,7 +3,6 @@ const User = require('../Models/User.js');
 exports.getUsers = async (req, res) => {
     try {
         const users = await getAllUsers();
-        console.log(users);
         res.status(200).json({
             success: true,
             data: users
@@ -57,7 +56,14 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     try {
         const result = await deleteUser(req.params.name);
-        res.json({ message: 'User deleted', data: result });
+        if (result.affectedRows != 0) {
+            res.status(200).json({
+                message: 'User deleted'
+            });
+        }
+        res.status(400).json({
+            message: "user not found"
+        });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
