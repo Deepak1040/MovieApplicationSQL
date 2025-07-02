@@ -7,7 +7,23 @@ app.use(morgan(`:remote-addr [:date] " :method :url " :status - :response-time m
 
 
 require('dotenv').config();
-require('./Config/db.js')
+const sequelize = require('./Config/db.js');
+const User = require('./Models/User.js');
+
+(async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('Connection has been established successfully.');
+
+        // Sync all models
+        await sequelize.sync({ alter: true }); // or { force: true } to drop & recreate
+
+        console.log('User table synced.');
+    } catch (error) {
+        console.error('Unable to connect to the database:', error);
+    }
+})();
+
 
 morgan.token('date', () => {
     const date = new Date();
@@ -31,5 +47,6 @@ app.listen(process.env.PORT, () => {
     console.log(`🚀 Server started on http://localhost:${process.env.PORT}`);
 })
 
-app.use('/api/users', require('./Routes/User.js'));
-app.use('/api/', require('./Routes/Movie.js'));
+const userRouter = require('./Routes/User.js');
+
+app.use('/api/users', userRouter);

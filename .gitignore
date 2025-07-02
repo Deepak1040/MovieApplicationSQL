@@ -71,3 +71,5 @@ debug.log
 
 bigQuery.sql
 bigQuery copy.sql
+
+database.sqlite

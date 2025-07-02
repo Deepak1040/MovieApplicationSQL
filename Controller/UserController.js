@@ -1,70 +1,165 @@
-const User = require('../Models/User.js');
+const { StatusCodes } = require('http-status-codes');
+const User = require('../Models/User');
+const UserService = require('../Service/UserService');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-exports.getUsers = async (req, res) => {
-    try {
-        const users = await getAllUsers();
-        res.status(200).json({
+exports.createUser = async (req, res) => {
+    const user = req.body;
+    let result = await UserService.createUser(user);
+    if (result !== "") {
+        res.status(StatusCodes.OK).json({
             success: true,
-            data: users
-        });
-    } catch (err) {
-        res.status(500).json({
+            data: {
+                id: result.id,
+                username: result.username,
+                email: result.email,
+                role: result.role,
+                password: res.password
+            }
+        })
+    } else {
+        res.status(StatusCodes.FORBIDDEN).json({
             success: false,
-            error: err.message
-        });
+            message: "User not created"
+        })
     }
-};
+}
 
-exports.getUser = async (req, res) => {
+
+exports.login = async (req, res) => {
     try {
-        const user = await getUserByName(req.params.name);
+        const { email, password } = req.body;
+
+        // 1. Find user
+        const user = await User.findOne({ where: { email } });
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
+            return res.status(400).json({ error: 'Invalid email' });
         }
-        res.status(200).json({
-            success: true,
-            data: user,
-            message: 'User fetched successfully'
+
+        // 2. Compare password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Invalid password' });
+        }
+
+        // 3. Generate JWT
+        const token = jwt.sign(
+            { id: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_SECRET_EXPIRY }
+        );
+
+        res.status(StatusCodes.OK).json({
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
         });
+
     } catch (err) {
+        console.error("Login Error:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
 
-exports.createUser = async (req, res) => {
+exports.getUsers = async (req, res) => {
     try {
-        const user = await createUser(req.body);
-        res.status(201).json({ data: user, message: 'User created successfully' });
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-};
+        const users = await UserService.getUsers();
+        if (users === null) {
+            res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                error: "Users not Found"
+            });
+        } else {
 
-exports.updateUser = async (req, res) => {
-    try {
-        const user = req.body;
-        await updateUser(req.params.id, user);
-        res.json({ message: 'User updated' });
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-};
+            const singleUser = users.map(user => ({
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }));
 
-exports.deleteUser = async (req, res) => {
-    try {
-        const result = await deleteUser(req.params.name);
-        if (result.affectedRows != 0) {
-            res.status(200).json({
-                message: 'User deleted'
+            res.status(StatusCodes.OK).json({
+                success: true,
+                message: "All User found",
+                data: singleUser
             });
         }
-        res.status(400).json({
-            message: "user not found"
-        });
+
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        console.error(err);
     }
-};
+}
+
+exports.getUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const user = await UserService.getById(userId);
+        if (user === null) {
+            res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                error: "User not Found"
+            });
+        }
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "User found",
+            data: {
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+exports.updateUser = async (req, res) => {
+    const userId = req.params.id;
+    const user = req.body;
+    try {
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "User Details is empty"
+            })
+        }
+        const updatedUser = await UserService.updateUser(userId, user);
+        console.log(updatedUser)
+        if (updatedUser === null) {
+            res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                error: "User not Found"
+            });
+        }
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "User Updated"
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+exports.deleteUser = async (req, res) => {
+    const id = req.params.id;
+
+    const result = await UserService.deleteUser(id);
+
+    if (result === "success") {
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "User Deleted"
+        });
+    } else {
+        res.status(StatusCodes.NOT_FOUND).json({
+            success: false,
+            error: result
+        });
+    }
+}
+
