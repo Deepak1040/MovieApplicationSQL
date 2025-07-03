@@ -1,18 +1,34 @@
 const User = require('../Models/User')
 const bcrypt = require('bcryptjs');
+const Role = require('../Models/Role');
 
 exports.createUser = async (body) => {
     const user = body;
+
     try {
+
         const hashedPassword = await bcrypt.hash(user.password, 10);
         user.password = hashedPassword;
+
+        const roleName = user.role || 'User';
+        const role = await Role.findOne({ where: { name: roleName } });
+
+        if (!role) throw new Error(`Role '${roleName}' not found`);
+
+        user.roleId = role.id;
+        delete user.role;
+
         const result = await User.create(user);
         return result;
+
     } catch (error) {
-        console.error(error);
+        console.error('Create User Error:', error);
         return "";
     }
-}
+};
+
+
+
 
 exports.getUsers = async () => {
     try {
@@ -34,23 +50,37 @@ exports.getById = async (userId) => {
     }
 }
 
-exports.updateUser = async (userId, user) => {
+exports.updateUser = async (userId, updateData) => {
     try {
-        const id = userId;
-        const updateData = user;
         if (updateData.password) {
             const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(updateData.password, salt);
-            updateData.password = hashedPassword;
+            updateData.password = await bcrypt.hash(updateData.password, salt);
         }
-        const updatedUser = await User.update(updateData, { where: { id: id } });
+
+        if (updateData.roleName ) {
+            const role = await Role.findOne({ where: { name: updateData.roleName } });
+            if (!role) {
+                throw new Error('Invalid role');
+            }
+            updateData.roleId = role.id;
+            delete updateData.roleName;
+        }
+
+        const [rowsUpdated] = await User.update(updateData, { where: { id: userId } });
+
+        if (rowsUpdated === 0) {
+            console.warn('No user updated. Possibly wrong userId.');
+            return null;
+        }
+
+        const updatedUser = await User.findByPk(userId);
         return updatedUser;
     } catch (error) {
-        console.error(error);
+        console.error('Update User Error:', error);
         return null;
     }
+};
 
-}
 
 
 exports.deleteUser = async (userId) => {

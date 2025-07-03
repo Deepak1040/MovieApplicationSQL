@@ -3,49 +3,60 @@ const User = require('../Models/User');
 const UserService = require('../Service/UserService');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const Role = require('../Models/Role');
 
 exports.createUser = async (req, res) => {
     const user = req.body;
-    let result = await UserService.createUser(user);
+
+    const result = await UserService.createUser(user);
+
     if (result !== "") {
+        // Include role name from associated Role model
+        const role = await Role.findByPk(result.roleId);
+
         res.status(StatusCodes.OK).json({
             success: true,
             data: {
                 id: result.id,
                 username: result.username,
                 email: result.email,
-                role: result.role,
-                password: res.password
+                role: role?.name || 'N/A' // show role name, not roleId
             }
-        })
+        });
     } else {
         res.status(StatusCodes.FORBIDDEN).json({
             success: false,
             message: "User not created"
-        })
+        });
     }
-}
-
+};
 
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // 1. Find user
-        const user = await User.findOne({ where: { email } });
+        const user = await User.findOne({
+            where: { email },
+            include: {
+                model: Role,
+                attributes: ['name']
+            }
+        });
+
         if (!user) {
             return res.status(400).json({ error: 'Invalid email' });
         }
 
-        // 2. Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ error: 'Invalid password' });
         }
 
-        // 3. Generate JWT
         const token = jwt.sign(
-            { id: user.id, role: user.role },
+            {
+                id: user.id,
+                role: user.Role.name
+            },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_SECRET_EXPIRY }
         );
@@ -56,7 +67,7 @@ exports.login = async (req, res) => {
                 id: user.id,
                 username: user.username,
                 email: user.email,
-                role: user.role
+                role: user.Role.name
             }
         });
 
@@ -65,6 +76,7 @@ exports.login = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
 
 exports.getUsers = async (req, res) => {
     try {
@@ -123,7 +135,7 @@ exports.updateUser = async (req, res) => {
     const user = req.body;
     try {
         if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(StatusCodes.BAD_REQUEST).json({
+            return res.status(StatusCodes.BAD_REQUEST).json({
                 success: false,
                 message: "User Details is empty"
             })
@@ -131,12 +143,12 @@ exports.updateUser = async (req, res) => {
         const updatedUser = await UserService.updateUser(userId, user);
         console.log(updatedUser)
         if (updatedUser === null) {
-            res.status(StatusCodes.NOT_FOUND).json({
+            return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 error: "User not Found"
             });
         }
-        res.status(StatusCodes.OK).json({
+        return res.status(StatusCodes.OK).json({
             success: true,
             message: "User Updated"
         });
@@ -148,18 +160,27 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     const id = req.params.id;
 
+    // Check if the logged-in user is Admin
+    if (req.user?.role !== 'Admin') {
+        return res.status(StatusCodes.FORBIDDEN).json({
+            success: false,
+            error: "Access denied. Only Admins can delete users.",
+        });
+    }
+
     const result = await UserService.deleteUser(id);
 
     if (result === "success") {
         res.status(StatusCodes.OK).json({
             success: true,
-            message: "User Deleted"
+            message: "User Deleted",
         });
     } else {
         res.status(StatusCodes.NOT_FOUND).json({
             success: false,
-            error: result
+            error: result,
         });
     }
-}
+};
 
+// TODO CREATE LOGOUT CONTROLLER

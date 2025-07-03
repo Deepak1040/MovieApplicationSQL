@@ -1,33 +1,22 @@
-const express = require('express')
+const express = require('express');
+const morgan = require('morgan');
+require('dotenv').config();
+
 const app = express();
 app.use(express.json());
-const morgan = require('morgan')
 
-app.use(morgan(`:remote-addr [:date] " :method :url " :status - :response-time ms`));
+// DB Config & Models
+const sequelize = require('./Config/db');
+const Role = require('./Models/Role');
+const User = require('./Models/User');
 
+// 🔗 Associations (must come before sync)
+Role.hasMany(User, { foreignKey: 'roleId' });
+User.belongsTo(Role, { foreignKey: 'roleId' });
 
-require('dotenv').config();
-const sequelize = require('./Config/db.js');
-const User = require('./Models/User.js');
-
-(async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('Connection has been established successfully.');
-
-        // Sync all models
-        await sequelize.sync({ alter: true }); // or { force: true } to drop & recreate
-
-        console.log('User table synced.');
-    } catch (error) {
-        console.error('Unable to connect to the database:', error);
-    }
-})();
-
-
+// 🪵 Logging with IST format
 morgan.token('date', () => {
     const date = new Date();
-
     const formatted = date.toLocaleString('en-IN', {
         timeZone: 'Asia/Kolkata',
         day: '2-digit',
@@ -38,15 +27,38 @@ morgan.token('date', () => {
         second: '2-digit',
         hour12: true
     });
-
-    const capitalized = formatted.replace(/(am|pm)/, (match) => match.toUpperCase());
-    return `${capitalized} IST`;
+    return formatted.replace(/(am|pm)/, (match) => match.toUpperCase()) + ' IST';
 });
+app.use(morgan(`:remote-addr [:date] ":method :url" :status - :response-time ms`));
 
-app.listen(process.env.PORT, () => {
-    console.log(`🚀 Server started on http://localhost:${process.env.PORT}`);
-})
+// 🌱 Seeder: Add default roles
+const seedRole = async () => {
+    const defaultRoles = ['Admin', 'Manager', 'User'];
+    for (const name of defaultRoles) {
+        await Role.findOrCreate({ where: { name } });
+    }
+};
 
-const userRouter = require('./Routes/User.js');
+// 🔄 Sync & Seed
+(async () => {
+    try {
+        await sequelize.authenticate();
 
+        await sequelize.sync({ alter: true });
+
+        await seedRole();
+
+    } catch (error) {
+        console.error('❌ Unable to connect or sync to the database:', error);
+    }
+})();
+
+// Routes
+const userRouter = require('./Routes/User');
 app.use('/api/users', userRouter);
+
+// Start Server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 Server started on http://localhost:${PORT}`);
+});
