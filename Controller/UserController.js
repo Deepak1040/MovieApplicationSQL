@@ -11,7 +11,6 @@ exports.createUser = async (req, res) => {
     const result = await UserService.createUser(user);
 
     if (result !== "") {
-        // Include role name from associated Role model
         const role = await Role.findByPk(result.roleId);
 
         res.status(StatusCodes.OK).json({
@@ -20,7 +19,7 @@ exports.createUser = async (req, res) => {
                 id: result.id,
                 username: result.username,
                 email: result.email,
-                role: role?.name || 'N/A' // show role name, not roleId
+                role: role?.name || 'N/A'
             }
         });
     } else {
@@ -184,3 +183,4 @@ exports.deleteUser = async (req, res) => {
 };
 
 // TODO CREATE LOGOUT CONTROLLER
+
